@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# ChromaDB (will be created in container)
+chroma_db/
+
+# Data (will be copied explicitly)
+# data/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# Notebooks
+*.ipynb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deployment
+deploy/
+
+# Logs
+*.log
+
