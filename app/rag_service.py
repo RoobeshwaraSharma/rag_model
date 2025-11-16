@@ -4,8 +4,9 @@ import os
 from typing import Dict, Any
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_chroma import Chroma
 from app.config import (
     CHROMA_DB_PATH,
@@ -60,9 +61,8 @@ def get_qa_chain():
         vectorstore = get_vectorstore()
         retriever = vectorstore.as_retriever(search_kwargs={"k": SEARCH_K})
         
-        # Create prompt template
-        json_prompt_template = """
-You are an intelligent anime recommender that uses content-based filtering and cosine similarity.
+        # Create prompt template (LangChain 1.0.0 uses ChatPromptTemplate)
+        system_prompt = """You are an intelligent anime recommender that uses content-based filtering and cosine similarity.
 You are given context data about various anime, including their name, genre, rating, and synopsis.
 
 Your job:
@@ -75,12 +75,6 @@ Your job:
 - Respond strictly in JSON format for frontend use.
 - Do not include any extra text outside the JSON.
 
-Context:
-{context}
-
-User question or preference:
-{question}
-
 Your response should be a JSON array like this:
 [
   {{
@@ -91,23 +85,18 @@ Your response should be a JSON array like this:
   }}
 ]
 
-Do not include any extra text outside the JSON.
-"""
+Do not include any extra text outside the JSON."""
         
-        prompt = PromptTemplate(
-            template=json_prompt_template,
-            input_variables=["context", "question"]
-        )
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", "Context:\n{context}\n\nUser question or preference: {input}")
+        ])
         
-        chain_type_kwargs = {"prompt": prompt}
+        # Create document chain
+        document_chain = create_stuff_documents_chain(llm, prompt)
         
-        _qa_chain = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            retriever=retriever,
-            return_source_documents=True,
-            chain_type_kwargs=chain_type_kwargs
-        )
+        # Create retrieval chain
+        _qa_chain = create_retrieval_chain(retriever, document_chain)
     
     return _qa_chain
 
@@ -124,10 +113,10 @@ def recommend_anime(query: str) -> Dict[str, Any]:
     """
     try:
         qa_chain = get_qa_chain()
-        result = qa_chain.invoke({"query": query})
+        result = qa_chain.invoke({"input": query})
         
-        # Parse JSON from result
-        recommendation_str = result.get("result", "")
+        # Parse JSON from result (LangChain 1.0.0 uses "answer" instead of "result")
+        recommendation_str = result.get("answer", result.get("result", ""))
         
         # Try to extract JSON from the response
         # Sometimes LLM adds extra text, so we try to find JSON array

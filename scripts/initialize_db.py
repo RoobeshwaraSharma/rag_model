@@ -8,8 +8,8 @@ from tqdm import tqdm
 # Add parent directory to path to import app modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from langchain.document_loaders import CSVLoader
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_community.document_loaders import CSVLoader
+from langchain_text_splitters import CharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from chromadb import PersistentClient
 from app.config import (
