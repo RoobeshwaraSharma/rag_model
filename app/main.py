@@ -37,7 +37,7 @@ async def health_check():
     return {"status": "healthy"}
 
 
-@app.post("/recommend", response_model=RecommendationResponse)
+@app.post("/recommend")
 async def recommend_anime_endpoint(request: QueryRequest):
     """
     Get anime recommendations based on user query
@@ -46,7 +46,7 @@ async def recommend_anime_endpoint(request: QueryRequest):
         request: QueryRequest with user query
         
     Returns:
-        RecommendationResponse with anime recommendations
+        Array of anime recommendations (for frontend compatibility)
     """
     if not request.query or not request.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
@@ -54,23 +54,29 @@ async def recommend_anime_endpoint(request: QueryRequest):
     try:
         result = recommend_anime(request.query)
         
+        # Check for errors
+        if result.get("error"):
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Recommendation error: {result.get('error')}"
+            )
+        
         # Convert recommendations list to AnimeRecommendation objects
         recommendations = []
         for rec in result.get("recommendations", []):
             try:
-                recommendations.append(AnimeRecommendation(**rec))
+                # Validate and convert to dict for JSON serialization
+                anime_rec = AnimeRecommendation(**rec)
+                recommendations.append(anime_rec.model_dump())
             except Exception as e:
                 # Skip invalid recommendations
                 continue
         
-        # Convert to response model
-        response = RecommendationResponse(
-            recommendations=recommendations,
-            query=result.get("query", request.query),
-            error=result.get("error")
-        )
+        # Return array directly (as expected by frontend)
+        return recommendations
         
-        return response
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
