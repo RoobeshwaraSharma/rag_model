@@ -98,7 +98,7 @@ Do not include any extra text outside the JSON."""
             # Limit context length to avoid token limits
             # Take first 5 documents and truncate each to max 300 chars
             formatted = []
-            for doc in docs[:5]:  # Limit to 5 documents max
+            for doc in docs[:10]:  # Limit to 5 documents max
                 content = doc.page_content[:300]  # Truncate each document to 300 chars
                 formatted.append(content)
             return "\n\n".join(formatted)
