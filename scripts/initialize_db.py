@@ -8,19 +8,25 @@ from tqdm import tqdm
 # Add parent directory to path to import app modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from langchain_community.document_loaders import CSVLoader
 from langchain_text_splitters import CharacterTextSplitter
+from langchain_core.documents import Document
 from sentence_transformers import SentenceTransformer
 from chromadb import PersistentClient
-from app.config import (
-    CSV_FILE_PATH,
-    CHROMA_DB_PATH,
-    COLLECTION_NAME,
-    CHUNK_SIZE,
-    CHUNK_OVERLAP,
-    BATCH_SIZE,
-    EMBEDDING_MODEL_NAME
-)
+import pandas as pd
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+BASE_DIR = Path(__file__).parent.parent
+
+# Get config values (without GROQ_API_KEY validation)
+CSV_FILE_PATH = os.getenv("CSV_FILE_PATH", str(BASE_DIR / "data" / "Anime_Cleaned.csv"))
+CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", str(BASE_DIR / "chroma_db"))
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "Anime_embeddings")
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "0"))
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
+EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
 
 
 def initialize_vector_store():
@@ -33,10 +39,29 @@ def initialize_vector_store():
     
     print(f"📂 Loading CSV from: {CSV_FILE_PATH}")
     
-    # Load CSV
-    loader = CSVLoader(file_path=CSV_FILE_PATH)
-    data = loader.load()
-    print(f"✅ Loaded {len(data)} documents from CSV")
+    # Load CSV using pandas (more reliable than CSVLoader)
+    try:
+        df = pd.read_csv(CSV_FILE_PATH, low_memory=False)
+        print(f"✅ Loaded CSV with {len(df)} rows and {len(df.columns)} columns")
+        
+        # Convert DataFrame to LangChain Documents
+        # Combine all columns into a single text representation
+        data = []
+        for idx, row in df.iterrows():
+            # Create a text representation of the row
+            text_parts = []
+            for col in df.columns:
+                if pd.notna(row[col]):
+                    text_parts.append(f"{col}: {row[col]}")
+            text = "\n".join(text_parts)
+            data.append(Document(page_content=text, metadata={"row_index": idx}))
+        
+        print(f"✅ Converted to {len(data)} documents")
+    except Exception as e:
+        print(f"❌ Error loading CSV: {str(e)}")
+        print(f"   File path: {CSV_FILE_PATH}")
+        print(f"   File exists: {os.path.exists(CSV_FILE_PATH)}")
+        raise
     
     # Split text
     print("✂️  Splitting documents...")
