@@ -4,9 +4,9 @@ import os
 from typing import Dict, Any
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
-from langchain.chains import create_retrieval_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
 from langchain_chroma import Chroma
 from app.config import (
     CHROMA_DB_PATH,
@@ -61,7 +61,7 @@ def get_qa_chain():
         vectorstore = get_vectorstore()
         retriever = vectorstore.as_retriever(search_kwargs={"k": SEARCH_K})
         
-        # Create prompt template (LangChain 1.0.0 uses ChatPromptTemplate)
+        # Create prompt template (LangChain 1.0.0 uses LCEL pattern)
         system_prompt = """You are an intelligent anime recommender that uses content-based filtering and cosine similarity.
 You are given context data about various anime, including their name, genre, rating, and synopsis.
 
@@ -89,14 +89,19 @@ Do not include any extra text outside the JSON."""
         
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
-            ("human", "Context:\n{context}\n\nUser question or preference: {input}")
+            ("human", "Context:\n{context}\n\nUser question or preference: {question}")
         ])
         
-        # Create document chain
-        document_chain = create_stuff_documents_chain(llm, prompt)
+        # Create RAG chain using LCEL (LangChain Expression Language)
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
         
-        # Create retrieval chain
-        _qa_chain = create_retrieval_chain(retriever, document_chain)
+        _qa_chain = (
+            {"context": retriever | format_docs, "question": RunnablePassthrough()}
+            | prompt
+            | llm
+            | StrOutputParser()
+        )
     
     return _qa_chain
 
@@ -113,10 +118,8 @@ def recommend_anime(query: str) -> Dict[str, Any]:
     """
     try:
         qa_chain = get_qa_chain()
-        result = qa_chain.invoke({"input": query})
-        
-        # Parse JSON from result (LangChain 1.0.0 uses "answer" instead of "result")
-        recommendation_str = result.get("answer", result.get("result", ""))
+        # LCEL chain returns string directly
+        recommendation_str = qa_chain.invoke(query)
         
         # Try to extract JSON from the response
         # Sometimes LLM adds extra text, so we try to find JSON array
