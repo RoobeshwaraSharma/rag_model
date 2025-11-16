@@ -16,8 +16,9 @@ chromadb==1.3.4
 sentence-transformers==5.1.2
 
 # Data processing
-pandas==2.2.2
-numpy==2.0.2
+# Versions with pre-built wheels for Python 3.12.4
+pandas>=2.0.0,<2.3.0
+numpy>=1.24.0,<2.0.0
 
 # Environment variables
 python-dotenv==1.0.1

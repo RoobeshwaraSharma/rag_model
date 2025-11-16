@@ -34,13 +34,36 @@ rag_model/
 
 ## Prerequisites
 
-- Python 3.11+
+- **Python 3.12.4** (recommended for Windows - excellent package wheel support)
 - Groq API key ([Get one here](https://console.groq.com/))
 - Docker (optional, for containerized deployment)
+
+**Note for Windows users**: Python 3.12.4 has excellent pre-built wheel support, so installation should be straightforward without needing build tools.
 
 ## Local Setup
 
 ### 1. Clone and Setup
+
+**Windows Setup (Python 3.12.4):**
+
+```powershell
+# Navigate to project directory
+cd rag_model
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+venv\Scripts\activate
+
+# Upgrade pip, setuptools, and wheel to latest versions
+python -m pip install --upgrade pip setuptools wheel
+
+# Install all dependencies (Python 3.12.4 has excellent wheel support)
+pip install -r requirements.txt
+```
+
+**Linux/Mac Setup:**
 
 ```bash
 # Navigate to project directory
@@ -50,12 +73,30 @@ cd rag_model
 python -m venv venv
 
 # Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On Linux/Mac:
 source venv/bin/activate
 
+# Upgrade pip, setuptools, and wheel
+pip install --upgrade pip setuptools wheel
+
 # Install dependencies
+pip install -r requirements.txt
+```
+
+**Troubleshooting (if you encounter any issues)**:
+
+If you encounter any build errors, try installing dependencies in steps:
+
+```powershell
+# Upgrade pip first
+pip install --upgrade pip setuptools wheel
+
+# Install pandas and numpy first (these usually have wheels for Python 3.12.4)
+pip install pandas numpy
+
+# Install pydantic separately (to ensure it gets wheels)
+pip install pydantic==2.11.10
+
+# Then install the rest
 pip install -r requirements.txt
 ```
 
