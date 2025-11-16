@@ -3,9 +3,12 @@ fastapi==0.115.0
 uvicorn[standard]==0.32.0
 
 # LangChain and related
+# langchain-groq 1.0.0 requires langchain-core>=1.0.0
+# So we need to use newer langchain packages OR older langchain-groq
+# Using older langchain-groq version that works with langchain 0.3.x
 langchain==0.3.27
 langchain-community==0.3.31
-langchain-groq==1.0.0
+langchain-groq==0.1.2
 langchain-chroma==0.1.2
 langchain-huggingface==0.0.3
 
