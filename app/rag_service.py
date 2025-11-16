@@ -59,8 +59,8 @@ def get_qa_chain():
         
         # Initialize vector store
         vectorstore = get_vectorstore()
-        # Retrieve more documents to get 10-12 recommendations (retrieve 15-20 for context)
-        retriever = vectorstore.as_retriever(search_kwargs={"k": min(SEARCH_K, 20)})
+        # Retrieve more documents to get 20-25 recommendations (retrieve 30-35 for context)
+        retriever = vectorstore.as_retriever(search_kwargs={"k": min(SEARCH_K, 35)})
         
         # Create prompt template (LangChain 1.0.0 uses LCEL pattern)
         system_prompt = """You are an intelligent anime recommender that uses content-based filtering and cosine similarity.
@@ -72,11 +72,11 @@ Your job:
 - If the user's input refers to a *Hollywood or non-anime movie*, do NOT attempt to match it directly.
 - Instead, recommend the **top-rated anime** from the dataset (sorted by rating or relevance).
 - Match the user's preferences with similar anime from the context.
-- **IMPORTANT: Provide 10-12 anime recommendations if available in the context. If fewer are available, provide as many as possible.**
+- **IMPORTANT: Provide 20-25 anime recommendations if available in the context. If fewer are available, provide as many as possible.**
 - Respond strictly in JSON format for frontend use.
 - Do not include any extra text outside the JSON.
 
-Your response should be a JSON array with 10-12 recommendations like this:
+Your response should be a JSON array with 20-25 recommendations like this:
 [
   {{
     "recommended_title": "string",
@@ -96,10 +96,10 @@ Do not include any extra text outside the JSON."""
         # Create RAG chain using LCEL (LangChain Expression Language)
         def format_docs(docs):
             # Limit context length to avoid token limits
-            # Take first 15 documents and truncate each to max 200 chars to fit more documents
+            # Take first 30 documents and truncate each to max 150 chars to fit more documents
             formatted = []
-            for doc in docs[:15]:  # Limit to 15 documents to have enough context for 10-12 recommendations
-                content = doc.page_content[:200]  # Truncate each document to 200 chars to fit more
+            for doc in docs[:30]:  # Limit to 30 documents to have enough context for 20-25 recommendations
+                content = doc.page_content[:150]  # Truncate each document to 150 chars to fit more
                 formatted.append(content)
             return "\n\n".join(formatted)
         
