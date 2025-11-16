@@ -29,7 +29,7 @@ CSV_FILE_PATH = os.getenv("CSV_FILE_PATH", str(BASE_DIR / "data" / "Anime_Cleane
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))
 CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "0"))
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "100"))
-SEARCH_K = int(os.getenv("SEARCH_K", "1000"))
+SEARCH_K = int(os.getenv("SEARCH_K", "10"))  # Reduced from 1000 to avoid token limits
 
 # Validate required configuration
 if not GROQ_API_KEY:
